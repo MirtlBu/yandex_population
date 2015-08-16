@@ -43,6 +43,10 @@ function getData(url, callback) {
 
 /**
  * Ваши изменения ниже
+
+    Из-за таймаута к моменту вызова callback цикл уже отрабатывал и переменная request переопределялась ('/population').
+    Если каждую итерацию вызывать анонимную функцию с переменной request, то создадутся три разных области видимости, каждая со своей request.
+    Обработку response для удобства сделала отдельной функцией.
  */
 var requests = ['/countries', '/cities', '/populations'];
 var responses = {};
@@ -50,11 +54,11 @@ var responses = {};
 for (i = 0; i < 3; i++) {
     (function() {
         var request = requests[i];
+        console.log('outside', request);
         getData(request, function(error, result) {
+            console.log('inside', request);
             responses[request] = result;
-            if (Object.keys(responses).length === requests.length) {
-                getPopulation(responses);
-            }
+            getPopulation(responses);
         });
     })();
 }

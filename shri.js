@@ -19,7 +19,7 @@ function getData(url, callback) {
             {name: 'Quetzaltenango', country: 'Guatemala'},
             {name: 'Osaka', country: 'Japan'},
             {name: 'Subotica', country: 'Yugoslavia'},
-            {name: 'Zanzibar', country: 'Tanzania'},
+            {name: 'Zanzibar', country: 'Tanzania'}
         ],
         '/populations': [
             {count: 138000, name: 'Bamenda'},
@@ -34,6 +34,7 @@ function getData(url, callback) {
     setTimeout(function () {
         var result = RESPONSES[url];
         if (!result) {
+            console.log('error');
             return callback('Unknown url');
         }
 
@@ -43,55 +44,59 @@ function getData(url, callback) {
 
 /**
  * Ваши изменения ниже
-
-    Из-за таймаута к моменту вызова callback цикл уже отрабатывал и переменная request переопределялась ('/population').
-    Если каждую итерацию вызывать анонимную функцию с переменной request, то создадутся три разных области видимости, каждая со своей request.
-    Обработку response для удобства сделала отдельной функцией.
  */
 var requests = ['/countries', '/cities', '/populations'];
-var responses = {};
 
-for (i = 0; i < 3; i++) {
-    (function() {
-        var request = requests[i];
-        console.log('outside', request);
-        getData(request, function(error, result) {
-            console.log('inside', request);
-            responses[request] = result;
-            getPopulation(responses);
-        });
-    })();
+function getObject(request) {
+    var responses = {};
+    for(var i = 0; i < 3; i++) {
+        (function() {
+            var objKey = requests[i];
+            getData(objKey, function(error, result) {
+                responses[objKey] = result;
+                countHandler(responses, request);
+            });
+        })();
+    }
 }
 
-function getPopulation(responses) {
-    var l = [];
-    for (K in responses)
-        l.push(K);
+function getPopulation() {
+    var request = document.getElementById('input').value;
+    getObject(capitalizeFirstLetter(request));
+}
 
-    if (l.length == 3) {
-        var c = [], cc = [], p = 0;
-        for (i = 0; i < responses['/countries'].length; i++) {
-            if (responses['/countries'][i].continent === 'Africa') {
-                c.push(responses['/countries'][i].name);
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function countHandler(responses, request) {
+
+    if(Object.keys(responses).length === requests.length) {
+        var cities = [];
+
+        for (var i = 0; i < responses['/cities'].length; i++) {
+
+            if(responses['/cities'][i].country === request || responses['/cities'][i].name === request) {
+                cities.push(responses['/cities'][i].name);
+                getSum();
+                return;
+            }
+            else {
+                document.getElementById('answer').innerHTML = 'Города или страны ' + request + ' нет в нашем списке.';
             }
         }
 
-        for (i = 0; i < responses['/cities'].length; i++) {
-            for (j = 0; j < c.length; j++) {
-                if (responses['/cities'][i].country === c[j]) {
-                    cc.push(responses['/cities'][i].name);
+        function getSum() {
+            var sum = 0;
+            for(var i = 0; i < cities.length; i++) {
+                for(var j = 0; j < responses['/populations'].length; j++) {
+                    if(cities[i] === responses['/populations'][j].name) {
+                        sum = sum + responses['/populations'][j].count;
+                    }
                 }
             }
+            document.getElementById('answer').innerHTML = 'Численность населения ' + request + ' равна ' + sum + '.';
         }
 
-        for (i = 0; i < responses['/populations'].length; i++) {
-            for (j = 0; j < cc.length; j++) {
-                if (responses['/populations'][i].name === cc[j]) {
-                    p += responses['/populations'][i].count;
-                }
-            }
-        }
-
-        console.log('Total population in African cities: ' + p);
     }
-};
+}

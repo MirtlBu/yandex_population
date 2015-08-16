@@ -54,9 +54,7 @@ var responses = {};
 for (i = 0; i < 3; i++) {
     (function() {
         var request = requests[i];
-        console.log('outside', request);
         getData(request, function(error, result) {
-            console.log('inside', request);
             responses[request] = result;
             getPopulation(responses);
         });
